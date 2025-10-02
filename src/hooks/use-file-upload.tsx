@@ -11,6 +11,15 @@ export const SUPPORTED_FILE_TYPES = [
   "application/pdf",
 ];
 
+const INVALID_FILE_TYPE_MESSAGE =
+  "You have uploaded invalid file type. Please upload a JPEG, PNG, GIF, WEBP image or a PDF.";
+
+const INVALID_PASTED_FILE_TYPE_MESSAGE =
+  "You have pasted an invalid file type. Please paste a JPEG, PNG, GIF, WEBP image or a PDF.";
+
+const DUPLICATE_FILE_MESSAGE = (fileNames: string[]) =>
+  `Duplicate file(s) detected: ${fileNames.join(", ")}. Each file can only be uploaded once per message.`;
+
 interface UseFileUploadOptions {
   initialBlocks?: Base64ContentBlock[];
 }
@@ -62,13 +71,11 @@ export function useFileUpload({
     );
 
     if (invalidFiles.length > 0) {
-      toast.error(
-        "You have uploaded invalid file type. Please upload a JPEG, PNG, GIF, WEBP image or a PDF.",
-      );
+      toast.error(INVALID_FILE_TYPE_MESSAGE);
     }
     if (duplicateFiles.length > 0) {
       toast.error(
-        `Duplicate file(s) detected: ${duplicateFiles.map((f) => f.name).join(", ")}. Each file can only be uploaded once per message.`,
+        DUPLICATE_FILE_MESSAGE(duplicateFiles.map((f) => f.name)),
       );
     }
 
@@ -122,13 +129,11 @@ export function useFileUpload({
       );
 
       if (invalidFiles.length > 0) {
-        toast.error(
-          "You have uploaded invalid file type. Please upload a JPEG, PNG, GIF, WEBP image or a PDF.",
-        );
+        toast.error(INVALID_FILE_TYPE_MESSAGE);
       }
       if (duplicateFiles.length > 0) {
         toast.error(
-          `Duplicate file(s) detected: ${duplicateFiles.map((f) => f.name).join(", ")}. Each file can only be uploaded once per message.`,
+          DUPLICATE_FILE_MESSAGE(duplicateFiles.map((f) => f.name)),
         );
       }
 
@@ -220,35 +225,14 @@ export function useFileUpload({
     const invalidFiles = files.filter(
       (file) => !SUPPORTED_FILE_TYPES.includes(file.type),
     );
-    const isDuplicate = (file: File) => {
-      if (file.type === "application/pdf") {
-        return contentBlocks.some(
-          (b) =>
-            b.type === "file" &&
-            b.mime_type === "application/pdf" &&
-            b.metadata?.filename === file.name,
-        );
-      }
-      if (SUPPORTED_FILE_TYPES.includes(file.type)) {
-        return contentBlocks.some(
-          (b) =>
-            b.type === "image" &&
-            b.metadata?.name === file.name &&
-            b.mime_type === file.type,
-        );
-      }
-      return false;
-    };
     const duplicateFiles = validFiles.filter(isDuplicate);
     const uniqueFiles = validFiles.filter((file) => !isDuplicate(file));
     if (invalidFiles.length > 0) {
-      toast.error(
-        "You have pasted an invalid file type. Please paste a JPEG, PNG, GIF, WEBP image or a PDF.",
-      );
+      toast.error(INVALID_PASTED_FILE_TYPE_MESSAGE);
     }
     if (duplicateFiles.length > 0) {
       toast.error(
-        `Duplicate file(s) detected: ${duplicateFiles.map((f) => f.name).join(", ")}. Each file can only be uploaded once per message.`,
+        DUPLICATE_FILE_MESSAGE(duplicateFiles.map((f) => f.name)),
       );
     }
     if (uniqueFiles.length > 0) {

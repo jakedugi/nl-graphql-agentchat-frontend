@@ -1,155 +1,138 @@
-# Agent Chat UI - Frontend Setup
+# Agent Chat UI
 
-## ✅ Frontend Status: Running
+A modern, streaming chat interface for LangGraph agents built with Next.js, React, and TypeScript.
 
-- **URL:** http://localhost:3001
-- **Status:** ✅ Configured and running correctly
+## Features
 
-## ⚠️ Backend Status: Required
+- **Real-time streaming** - Live responses from LangGraph agents
+- **File upload support** - Images and PDFs with multimodal processing
+- **Thread management** - Organized conversation history
+- **Tool call visualization** - Interactive display of agent actions
+- **Responsive design** - Works on desktop and mobile devices
+- **Dark/Light themes** - Automatic theme switching
 
-- **Expected URL:** http://localhost:3000
-- **Status:** ❌ Not running - **YOU NEED TO SET THIS UP!**
-
-## The Error You're Seeing
+## Architecture
 
 ```
-TypeError: newHistory.at is not a function
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Frontend      │    │   API Proxy      │    │   LangGraph     │
+│   (Next.js)     │───▶│   (Next.js)      │───▶│   Backend       │
+│   Port 3001     │    │   /api/*         │    │   Port 3000     │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
 ```
 
-**Why?** The frontend is trying to connect to a backend at `http://localhost:3000`, but there's no server running there. The frontend expects to receive an array of messages but gets nothing.
+## Quick Start
 
-## Quick Fix
+### Prerequisites
 
-You need a LangGraph backend server. See **[BACKEND_SETUP_NEEDED.md](./BACKEND_SETUP_NEEDED.md)** for detailed instructions.
+- Node.js 18+
+- npm or pnpm
+- A LangGraph backend server running on port 3000
 
-### Quick Start - Option 1: Minimal Backend
+### Installation
 
 ```bash
-# In a new terminal, create a simple backend
-cd /Users/jakedugan/Projects
-mkdir nl-graphql-backend && cd nl-graphql-backend
-npm init -y
-npm install express cors
+# Clone the repository
+git clone https://github.com/jakedugi/nl-graphql-agentchat-frontend.git
+cd nl-graphql-agentchat-frontend
+
+# Install dependencies
+pnpm install
+
+# Copy environment configuration
+cp .env.example .env.local
+
+# Configure your backend URL
+echo "LANGGRAPH_API_URL=http://localhost:3000" >> .env.local
 ```
 
-Create `index.js`:
-```javascript
-const express = require('express');
-const cors = require('cors');
-const app = express();
-
-app.use(cors());
-app.use(express.json());
-
-app.post('/threads', (req, res) => {
-  res.json({ thread_id: `thread_${Date.now()}`, created_at: new Date().toISOString() });
-});
-
-app.get('/threads/:id', (req, res) => {
-  res.json({ thread_id: req.params.id, values: { messages: [] } });
-});
-
-app.post('/threads/:id/runs/stream', (req, res) => {
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.write(`data: ${JSON.stringify({ type: 'message', content: 'Hello!' })}\n\n`);
-  res.end();
-});
-
-app.get('/assistants/:id', (req, res) => {
-  res.json({ assistant_id: req.params.id, name: 'Football Agent' });
-});
-
-app.listen(3000, () => console.log('Backend on http://localhost:3000'));
-```
-
-Run it:
-```bash
-node index.js
-```
-
-### Option 2: Use Your Existing Backend
-
-If you have a LangGraph backend project, update `.env.local`:
+### Development
 
 ```bash
-LANGGRAPH_API_URL=http://your-backend-url
+# Start the development server
+pnpm dev
 ```
 
-## Current Configuration
+Open [http://localhost:3001](http://localhost:3001) in your browser.
 
-**`.env.local`:**
-```bash
-NEXT_PUBLIC_API_URL=http://localhost:3001/api
-NEXT_PUBLIC_ASSISTANT_ID=football-agent
-LANGGRAPH_API_URL=http://localhost:3000
-```
+## Configuration
 
-**How it works:**
-1. Frontend (port 3001) sends requests to its own `/api/*` endpoints
-2. Those endpoints proxy/forward to `LANGGRAPH_API_URL` (port 3000)
-3. Backend processes and responds
-4. Response flows back through proxy to frontend
+### Environment Variables
 
-## Verification Steps
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NEXT_PUBLIC_API_URL` | Frontend API endpoint | `/api` |
+| `NEXT_PUBLIC_ASSISTANT_ID` | Default assistant ID | `agent` |
+| `LANGGRAPH_API_URL` | LangGraph backend URL | `http://localhost:2024` |
+| `LANGSMITH_API_KEY` | Optional: LangSmith API key | - |
 
-Once backend is running:
+### Backend Requirements
 
-1. ✅ Test backend: `curl http://localhost:3000/assistants/football-agent`
-2. ✅ Open frontend: http://localhost:3001
-3. ✅ Send a message in the chat
-4. ✅ Check for no errors in console
+The backend must implement these LangGraph API endpoints:
+
+- `POST /threads` - Create new conversation thread
+- `GET /threads/:id` - Get thread state
+- `POST /threads/:id/runs/stream` - Stream agent responses
+- `GET /assistants/:id` - Get assistant information
 
 ## Project Structure
 
 ```
-/Users/jakedugan/Projects/
-├── nl-graphql-agentchat-frontend/    # THIS PROJECT (Frontend)
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── api/[..._path]/       # Proxy to backend
-│   │   │   └── page.tsx              # Chat UI
-│   │   └── components/               # UI components
-│   ├── .env.local                    # Configuration
-│   └── package.json
-│
-└── nl-graphql-backend/               # YOU NEED TO CREATE THIS
-    ├── index.js                      # Backend server
-    └── package.json
+src/
+├── app/                    # Next.js app router
+│   ├── api/[..._path]/     # API proxy routes
+│   ├── globals.css         # Global styles
+│   ├── layout.tsx          # Root layout
+│   └── page.tsx            # Main chat page
+├── components/             # Reusable UI components
+│   ├── thread/             # Chat-specific components
+│   └── ui/                 # Base UI components
+├── hooks/                  # React hooks
+├── lib/                    # Utilities and helpers
+└── providers/              # React context providers
 ```
 
-## Files in This Project
+## Key Components
 
-| File | Purpose |
-|------|---------|
-| `src/app/page.tsx` | Main chat interface |
-| `src/app/api/[..._path]/route.ts` | Proxy to backend |
-| `src/providers/Stream.tsx` | Handles streaming responses |
-| `src/components/thread/` | Chat components |
-| `.env.local` | Configuration |
+- **Thread Provider** - Manages conversation state
+- **Stream Provider** - Handles real-time streaming
+- **File Upload Hook** - Multimodal file processing
+- **Message Components** - Human/AI message rendering
+- **Tool Call Table** - Interactive tool visualization
 
 ## Development
 
-```bash
-# Start frontend (already running)
-npm run dev
+### Available Scripts
 
-# In another terminal - start backend
-cd ../nl-graphql-backend
-npm start
+```bash
+pnpm dev        # Start development server
+pnpm build      # Build for production
+pnpm start      # Start production server
+pnpm lint       # Run ESLint
+pnpm format     # Format code with Prettier
 ```
+
+### Code Quality
+
+- **TypeScript** - Full type safety
+- **ESLint** - Code linting
+- **Prettier** - Code formatting
+- **Tailwind CSS** - Utility-first styling
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests and linting
+5. Submit a pull request
 
 ## Resources
 
-- 📖 [Backend Setup Guide](./BACKEND_SETUP_NEEDED.md) - **READ THIS FIRST!**
-- 📖 [Setup Complete](./SETUP_COMPLETE.md) - Frontend setup details
-- 🔗 [Agent Chat UI Docs](https://github.com/langchain-ai/agent-chat-ui)
-- 🔗 [LangGraph Docs](https://langchain-ai.github.io/langgraph/)
+- [LangGraph Documentation](https://langchain-ai.github.io/langgraph/)
+- [Next.js Documentation](https://nextjs.org/docs)
+- [LangChain Agent Chat UI](https://github.com/langchain-ai/agent-chat-ui)
 
----
+## License
 
-## Summary
-
-✅ **Frontend:** Fully configured and running on port 3001  
-❌ **Backend:** Missing - you need to create/run a LangGraph server on port 3000
-
-**Next step:** Follow the [Backend Setup Guide](./BACKEND_SETUP_NEEDED.md)
+Licensed under the MIT License.
