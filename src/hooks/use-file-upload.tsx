@@ -74,9 +74,7 @@ export function useFileUpload({
       toast.error(INVALID_FILE_TYPE_MESSAGE);
     }
     if (duplicateFiles.length > 0) {
-      toast.error(
-        DUPLICATE_FILE_MESSAGE(duplicateFiles.map((f) => f.name)),
-      );
+      toast.error(DUPLICATE_FILE_MESSAGE(duplicateFiles.map((f) => f.name)));
     }
 
     const newBlocks = uniqueFiles.length
@@ -132,9 +130,7 @@ export function useFileUpload({
         toast.error(INVALID_FILE_TYPE_MESSAGE);
       }
       if (duplicateFiles.length > 0) {
-        toast.error(
-          DUPLICATE_FILE_MESSAGE(duplicateFiles.map((f) => f.name)),
-        );
+        toast.error(DUPLICATE_FILE_MESSAGE(duplicateFiles.map((f) => f.name)));
       }
 
       const newBlocks = uniqueFiles.length
@@ -225,15 +221,17 @@ export function useFileUpload({
     const invalidFiles = files.filter(
       (file) => !SUPPORTED_FILE_TYPES.includes(file.type),
     );
-    const duplicateFiles = validFiles.filter(isDuplicate);
-    const uniqueFiles = validFiles.filter((file) => !isDuplicate(file));
+    const duplicateFiles = validFiles.filter((file) =>
+      isDuplicate(file, contentBlocks),
+    );
+    const uniqueFiles = validFiles.filter(
+      (file) => !isDuplicate(file, contentBlocks),
+    );
     if (invalidFiles.length > 0) {
       toast.error(INVALID_PASTED_FILE_TYPE_MESSAGE);
     }
     if (duplicateFiles.length > 0) {
-      toast.error(
-        DUPLICATE_FILE_MESSAGE(duplicateFiles.map((f) => f.name)),
-      );
+      toast.error(DUPLICATE_FILE_MESSAGE(duplicateFiles.map((f) => f.name)));
     }
     if (uniqueFiles.length > 0) {
       const newBlocks = await Promise.all(uniqueFiles.map(fileToContentBlock));
